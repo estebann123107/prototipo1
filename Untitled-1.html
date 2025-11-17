@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Bicicleta Eléctrica</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background:url(https://mobulaa-colombia.com/cdn/shop/files/MIBIKE_1.jpg?v=1758211926);
+            background-size: cover;
+            background-position: center;
+
+        }
+        .container {
+            background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.466), rgba(240, 240, 240, 0.9));
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .specs {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #af4c4c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #a04545;
+        }
+        .results {
+            margin-top: 30px;
+            display: none;
+        }
+        .result-item {
+            background: #f9f9f9;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #4CAF50;
+            border-radius: 5px;
+        }
+        .result-label {
+            font-weight: bold;
+            color: #333;
+        }
+        .result-value {
+            color: #4CAF50;
+            font-size: 18px;
+            margin-top: 5px;
+        }
+        .battery-bar {
+            width: 100%;
+            height: 30px;
+            background: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .battery-fill {
+            height: 100%;
+            background: linear-gradient(to right, #f44336, #ff9800, #4CAF50);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Simulador Bicicleta Eléctrica</h1>
+        
+        <div class="specs">
+            <strong>Especificaciones:</strong><br>
+            Motor: 350W<br>
+            Batería: 36V / 12Ah (432Wh)
+        </div>
+
+        <form id="calculatorForm">
+            <div class="form-group">
+                <label for="velocity">Velocidad (km/h):</label>
+                <input type="number" id="velocity" min="0" step="0.01" required>
+            </div>
+
+            <div class="form-group">
+                <label for="mass">Masa Total (kg):</label>
+                <input type="number" id="mass" min="0" step="0.01" required>
+            </div>
+
+            <div class="form-group">
+                <label for="distance">Distancia Recorrida (km):</label>
+                <input type="number" id="distance" min="0" step="0.01" required>
+            </div>
+
+            <button type="submit">Calcular</button>
+        </form>
+
+        <div class="results" id="results">
+            <div class="result-item">
+                <div class="result-label">Energía Cinética:</div>
+                <div class="result-value" id="kineticEnergy">0 J</div>
+            </div>
+
+            <div class="result-item">
+                <div class="result-label">Consumo de Energía Estimado:</div>
+                <div class="result-value" id="energyConsumption">0 Wh</div>
+            </div>
+
+            <div class="result-item">
+                <div class="result-label">Porcentaje de Batería Usado:</div>
+                <div class="result-value" id="batteryPercent">0%</div>
+                <div class="battery-bar">
+                    <div class="battery-fill" id="batteryFill" style="width: 0%">
+                        <span id="batteryText">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-item">
+                <div class="result-label">Autonomía Teórica Restante:</div>
+                <div class="result-value" id="autonomy">0 km</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('calculatorForm');
+        const resultsDiv = document.getElementById('results');
+
+        // Especificaciones
+        const MOTOR_POWER = 350; // W
+        const BATTERY_VOLTAGE = 36; // V
+        const BATTERY_CAPACITY = 12; // Ah
+        const BATTERY_ENERGY = BATTERY_VOLTAGE * BATTERY_CAPACITY; // Wh (432Wh)
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const velocity = parseFloat(document.getElementById('velocity').value);
+            const mass = parseFloat(document.getElementById('mass').value);
+            const distance = parseFloat(document.getElementById('distance').value);
+
+            // Calcular energía cinética (EC = 1/2 * m * v²)
+            const velocityMs = velocity / 3.6; // Convertir km/h a m/s
+            const kineticEnergy = 0.5 * mass * Math.pow(velocityMs, 2);
+
+            // Consumo de energía estimado (Wh = W * h)
+            const timeHours = distance / velocity;
+            const energyConsumption = MOTOR_POWER * timeHours;
+
+            // Porcentaje de batería usado
+            const batteryPercent = (energyConsumption / BATTERY_ENERGY) * 100;
+
+            // Autonomía restante
+            const remainingBattery = Math.max(0, BATTERY_ENERGY - energyConsumption);
+            const autonomy = (remainingBattery / MOTOR_POWER) * velocity;
+
+            // Mostrar resultados
+            document.getElementById('kineticEnergy').textContent = 
+                kineticEnergy.toFixed(2) + ' J';
+            document.getElementById('energyConsumption').textContent = 
+                energyConsumption.toFixed(2) + ' Wh';
+            document.getElementById('batteryPercent').textContent = 
+                batteryPercent.toFixed(2) + '%';
+            document.getElementById('batteryFill').style.width = 
+                Math.min(batteryPercent, 100) + '%';
+            document.getElementById('batteryText').textContent = 
+                Math.min(batteryPercent, 100).toFixed(1) + '%';
+            document.getElementById('autonomy').textContent = 
+                autonomy.toFixed(2) + ' km';
+
+            resultsDiv.style.display = 'block';
+        });
+    </script>
+</body>
+</html>
